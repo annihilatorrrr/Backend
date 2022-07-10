@@ -128,20 +128,22 @@ class RCloneAPI:
             "opt": options,
         }
         result = requests.post(
-            self.RCLONE_RC_URL + "/" + self.RCLONE["getFilesList"],
+            f"{self.RCLONE_RC_URL}/" + self.RCLONE["getFilesList"],
             data=json.dumps(rc_data),
             headers={"Content-Type": "application/json"},
         ).json()
+
         return result["list"]
 
     def rc_conf(self) -> dict:
         """Retrieves the Rclone config of the current remote"""
         rc_data: dict = {"name": self.fs[:-1]}
         result = requests.post(
-            self.RCLONE_RC_URL + "/" + self.RCLONE["getConfigForRemote"],
+            f"{self.RCLONE_RC_URL}/" + self.RCLONE["getConfigForRemote"],
             data=json.dumps(rc_data),
             headers={"Content-Type": "application/json"},
         ).json()
+
         if result.get("token"):
             result["token"] = json.loads(result.get("token", "{}"))
         return result
@@ -173,8 +175,7 @@ class RCloneAPI:
                     "modified_time": item["ModTime"],
                 }
                 path_without_extension = path.splitext(item["Path"])[0]
-                file_name = file_names.get(path_without_extension)
-                if file_name:
+                if file_name := file_names.get(path_without_extension):
                     curr_metadata["subtitles"] = file_name["subtitles"]
                     file_names[path_without_extension]["found"] = True
                     file_names[path_without_extension]["index"] = sub_index
@@ -205,8 +206,7 @@ class RCloneAPI:
                     "name": item["Name"],
                     "path": item["Path"],
                 }
-                file_name = file_names.get(path_without_extension)
-                if file_name:
+                if file_name := file_names.get(path_without_extension):
                     if file_name["found"] is True:
                         metadata[file_name["index"]]["subtitles"].append(sub_metadata)
                     else:
@@ -309,18 +309,16 @@ class RCloneAPI:
             "opt": options,
         }
         result = requests.post(
-            "%s/%s" % (self.RCLONE_RC_URL, self.RCLONE["getFileInfo"]),
+            f'{self.RCLONE_RC_URL}/{self.RCLONE["getFileInfo"]}',
             data=json.dumps(rc_data),
             headers={"Content-Type": "application/json"},
         ).json()
+
         return result["item"]["Size"]
 
     def stream(self, path: str):
         """Generates the stream URL for a file"""
-        stream_url = (
-            f"http://localhost:{settings.RCLONE_LISTEN_PORT}/[{self.fs}]/{path}"
-        )
-        return stream_url
+        return f"http://localhost:{settings.RCLONE_LISTEN_PORT}/[{self.fs}]/{path}"
 
     def thumbnail(self, id) -> str:
         """Returns a thumbnail for a video file"""

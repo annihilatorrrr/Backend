@@ -27,10 +27,11 @@ def download_rclone() -> str:
     else:
         architecture = platform.uname()[4].lower()
     bin_dir = (
-        os.path.join(os.getcwd(), "bin")
-        if not os.getcwd().lower().endswith("scripts")
-        else os.path.join(pathlib.Path(os.getcwd()).parent.absolute(), "bin")
+        os.path.join(pathlib.Path(os.getcwd()).parent.absolute(), "bin")
+        if os.getcwd().lower().endswith("scripts")
+        else os.path.join(os.getcwd(), "bin")
     )
+
     if not os.path.isdir(bin_dir):
         os.mkdir(bin_dir)
     os_name = platform.uname()[0].lower()

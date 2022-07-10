@@ -62,8 +62,9 @@ def generate_movie_metadata(tmdb, data: dict, rclone_index: int) -> List[InsertO
     identified_list: Dict[int, Movie] = {}
     for drive_meta in data:
         original_name = drive_meta["name"]
-        match = re.search(r"{{(tmdb_id|anidb_id):(\d{1,8})}}", original_name)
-        if match:
+        if match := re.search(
+            r"{{(tmdb_id|anidb_id):(\d{1,8})}}", original_name
+        ):
             tmdb_id = match.group(2)
         else:
             cleaned_title = clean_file_name(original_name)
@@ -78,11 +79,11 @@ def generate_movie_metadata(tmdb, data: dict, rclone_index: int) -> List[InsertO
         logger.info(
             "Successfully identified: %s %s    ID: %s",
             name,
-            year if year else "",
+            year or "",
             tmdb_id,
         )
-        identified_match = identified_list.get(tmdb_id)
-        if identified_match:
+
+        if identified_match := identified_list.get(tmdb_id):
             identified_match.append_file(drive_meta)
         else:
             movie_info = tmdb.get_details(tmdb_id, "movies")
@@ -94,8 +95,7 @@ def generate_movie_metadata(tmdb, data: dict, rclone_index: int) -> List[InsertO
         if not tmdb_id:
             logger.info("Advanced search could not identify: %s", name)
             continue
-        identified_match = identified_list.get(tmdb_id)
-        if identified_match:
+        if identified_match := identified_list.get(tmdb_id):
             identified_match.append_file(drive_meta)
         else:
             movie_info = tmdb.get_details(tmdb_id, "movies")
@@ -104,10 +104,7 @@ def generate_movie_metadata(tmdb, data: dict, rclone_index: int) -> List[InsertO
             )
             curr_metadata: Movie = Movie(drive_meta, movie_info, rclone_index)
             identified_list[tmdb_id] = curr_metadata
-    metadata: List[InsertOne] = []
-    for item in identified_list.values():
-        metadata.append(InsertOne(item.__json__()))
-    return metadata
+    return [InsertOne(item.__json__()) for item in identified_list.values()]
 
 
 def generate_series_metadata(tmdb, data: dict, rclone_index: int) -> List[InsertOne]:
@@ -115,8 +112,9 @@ def generate_series_metadata(tmdb, data: dict, rclone_index: int) -> List[Insert
     metadata: List[InsertOne] = []
     for drive_meta in data:
         original_name = drive_meta["name"]
-        match = re.search(r"{{(tmdb_id|anidb_id):(\d{1,8})}}", original_name)
-        if match:
+        if match := re.search(
+            r"{{(tmdb_id|anidb_id):(\d{1,8})}}", original_name
+        ):
             tmdb_id = match.group(2)
         else:
             cleaned_title = clean_file_name(original_name)
@@ -126,9 +124,9 @@ def generate_series_metadata(tmdb, data: dict, rclone_index: int) -> List[Insert
             tmdb_id = tmdb.find_media_id(name, "series", year=year)
         if not tmdb_id:
             tmdb_id = tmdb.find_media_id(name, "series", year=year, use_api=False)
-            if not tmdb_id:
-                logger.info("Could not identify: %s", name)
-                continue
+        if not tmdb_id:
+            logger.info("Could not identify: %s", name)
+            continue
         series_info = tmdb.get_details(tmdb_id, "series")
         logger.info(
             "Successfully identified: %s    ID: %s", series_info["name"], tmdb_id

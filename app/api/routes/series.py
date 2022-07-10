@@ -14,8 +14,7 @@ def series_id_route(response: Response, id: int) -> dict:
     init_time = perf_counter()
     from app.apis import mongo
 
-    results = list(mongo.series_col.find({"tmdb_id": id}, {"_id": 0}))
-    if len(results) > 0:
+    if results := list(mongo.series_col.find({"tmdb_id": id}, {"_id": 0})):
         result = results[0]
         return DResponse(
             200,

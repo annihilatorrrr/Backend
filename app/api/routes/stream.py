@@ -28,14 +28,17 @@ def info(rclone_index: int, id: str):
     init_time = perf_counter()
 
     rc = rclone[rclone_index]
-    qualities = {"37": "1080p HD", "22": "720p HD", "59": "480p SD", "18": "360p SD"}
     transcoded_request = requests.get(
-        "https://drive.google.com/get_video_info?docid=%s" % (id),
-        headers={"Authorization": "Bearer %s" % (rc.fs_conf["token"]["access_token"])},
+        f"https://drive.google.com/get_video_info?docid={id}",
+        headers={
+            "Authorization": f'Bearer {rc.fs_conf["token"]["access_token"]}'
+        },
     )
+
     transcoded_data = parse_qs(transcoded_request.text)
     streams = []
     if transcoded_data.get("status") == ["ok"]:
+        qualities = {"37": "1080p HD", "22": "720p HD", "59": "480p SD", "18": "360p SD"}
         for stream in transcoded_data["fmt_stream_map"]:
             split_stream = stream.split("|")
             streams.append(

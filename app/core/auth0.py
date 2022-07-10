@@ -33,8 +33,9 @@ class Auth0Manager:
         self.api_identifier = fqdn
         if not re.search(r"https?://", fqdn):
             self.api_identifier = (
-                f"http{'s' if not fqdn.startswith('localhost') else ''}://{fqdn}"
+                f"http{'' if fqdn.startswith('localhost') else 's'}://{fqdn}"
             )
+
         self.httpx = httpx.Client()
         self.token = self.get_access_token()
         self.httpx.headers.update(
@@ -47,7 +48,7 @@ class Auth0Manager:
     def request_access_token(self) -> Token:
         logger.debug("Requesting access token...")
         for c in range(4):
-            if not c == 0:
+            if c != 0:
                 logger.debug(f"Retrying ({c}) ...")
             try:
                 data = {
@@ -58,17 +59,17 @@ class Auth0Manager:
                 }
                 response = self.httpx.post(f"{self.base_url}/oauth/token", data=data)
                 res = response.json()
-            except (HTTPError, RequestError, InvalidURL) as e:
+            except (HTTPError, InvalidURL) as e:
                 raise e
             except JSONDecodeError:
                 pass
             else:
-                token = Token(
-                    res["access_token"], token_expiry=time() + int(res["expires_in"])
+                return Token(
+                    res["access_token"],
+                    token_expiry=time() + int(res["expires_in"]),
                 )
-                return token
-        else:
-            exit("Failed to get access token")
+
+        exit("Failed to get access token")
 
     def get_access_token(self, bypass_old_token: bool = True) -> Token:
         if not os.path.exists("cache/access_token.json") or bypass_old_token:
@@ -186,7 +187,7 @@ class Auth0Manager:
         for grant in self.client_grants:
             if grant["client_id"] == self.mtm_client_id:
                 logger.debug("Found the grant")
-                if not set(grant["scope"]) == set(required_scopes):
+                if set(grant["scope"]) != set(required_scopes):
                     logger.debug("Insufficient scopes, updating..")
                     resp = self.update_client_grant(
                         grant["id"], {"scope": required_scopes}
@@ -218,12 +219,12 @@ class Auth0Manager:
                 and api.get("identifier") == self.api_identifier
             ):
                 logger.debug("Found the api")
-                if not api.get("signing_alg") == "RS256":
+                if api.get("signing_alg") != "RS256":
                     logger.debug("Signing algorithm is incorrect, updating..")
                     api = self.update_resource_server(
                         api["id"], {"signing_alg": "RS256"}
                     )
-                if not set([obj.get("value") for obj in api.get("scopes", [])]) == set(
+                if {obj.get("value") for obj in api.get("scopes", [])} != set(
                     required_scopes
                 ):
                     logger.debug("Insufficient scopes, updating..")
@@ -281,7 +282,10 @@ class Auth0Manager:
             ):
                 logger.debug("Found the mtm client")
                 mtm_client_id = client["client_id"]
-                if not client.get("token_endpoint_auth_method") == "client_secret_post":
+                if (
+                    client.get("token_endpoint_auth_method")
+                    != "client_secret_post"
+                ):
                     logger.debug("Updating auth method..")
                     client = self.update_client(
                         mtm_client_id,
@@ -292,7 +296,7 @@ class Auth0Manager:
                     client = self.update_client(
                         mtm_client_id, {"oidc_conformant": True}
                     )
-                if not client.get("grant_types") == ["client_credentials"]:
+                if client.get("grant_types") != ["client_credentials"]:
                     logger.debug("Updating grant types..")
                     client = self.update_client(
                         mtm_client_id, {"grant_types": ["client_credentials"]}

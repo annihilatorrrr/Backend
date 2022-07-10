@@ -83,28 +83,15 @@ def browse(
                 None,
                 init_time,
             )
-        rclone_indexes = []
-        for key, category in rclone.items():
-            if media_type == category.data.get("type", "movies"):
-                rclone_indexes.append(category.index)
+        rclone_indexes = [
+            category.index
+            for key, category in rclone.items()
+            if media_type == category.data.get("type", "movies")
+        ]
+
         match = {"rclone_index": {"$in": rclone_indexes}}
         if query != "":
             match["title"] = {"$regex": f".*{query}.*", "$options": "i"}
-        if year != 0:
-            match["year"] = year
-        if genre != "":
-            match["genres.name"] = genre
-        result = list(
-            col.aggregate(
-                [
-                    {"$match": match},
-                    {"$sort": sort_dict},
-                    {"$skip": page * 20},
-                    {"$limit": limit},
-                    {"$project": unwanted_keys},
-                ]
-            )
-        )
     else:
         for key, category in rclone.items():
             if category.index == rclone_index:
@@ -113,29 +100,23 @@ def browse(
                 else:
                     col = mongo.movies_col
         match = {"rclone_index": rclone_index}
-        if year != 0:
-            match["year"] = year
-        if genre != "":
-            match["genres.name"] = genre
-        result = list(
-            col.aggregate(
-                [
-                    {"$match": match},
-                    {"$sort": sort_dict},
-                    {"$skip": page * 20},
-                    {"$limit": limit},
-                    {"$project": unwanted_keys},
-                ]
-            )
+    if year != 0:
+        match["year"] = year
+    if genre != "":
+        match["genres.name"] = genre
+    result = list(
+        col.aggregate(
+            [
+                {"$match": match},
+                {"$sort": sort_dict},
+                {"$skip": page * 20},
+                {"$limit": limit},
+                {"$project": unwanted_keys},
+            ]
         )
-
-    message: str = "Results found: %s. Sorted by: %s %s. Page: %s. Limit: %s." % (
-        len(result),
-        sort_split[0],
-        "negatively" if sort_split[1] == 0 else "positively",
-        page,
-        limit,
     )
+    message: str = f'Results found: {len(result)}. Sorted by: {sort_split[0]} {"negatively" if sort_split[1] == 0 else "positively"}. Page: {page}. Limit: {limit}.'
+
     if query != "":
         message += f" Query: {query}."
     if year != 0:
@@ -151,10 +132,12 @@ def browse(
 def rclone_indeces():
     init_time = perf_counter()
 
-    result = {}
     categories = mongo.config["categories"]
-    for rclone_index, category in enumerate(categories):
-        result[category["name"]] = rclone_index
+    result = {
+        category["name"]: rclone_index
+        for rclone_index, category in enumerate(categories)
+    }
+
     return DResponse(
         200,
         "A map of categories and rclone indeces was successfully generated.",

@@ -15,15 +15,14 @@ router = APIRouter(
 def settings_get(secret_key: str = "") -> dict:
     init_time = perf_counter()
 
-    if mongo.config["app"].get("secret_key", "") == secret_key:
-        result = mongo.get_config()
-        return DResponse(
-            200, "Config successfully retrieved from database.", True, result, init_time
-        ).__json__()
-    else:
+    if mongo.config["app"].get("secret_key", "") != secret_key:
         return DResponse(
             401, "The secret key was incorrect.", False, None, init_time
         ).__json__()
+    result = mongo.get_config()
+    return DResponse(
+        200, "Config successfully retrieved from database.", True, result, init_time
+    ).__json__()
 
 
 @router.post("", response_model=dict, status_code=200)

@@ -177,7 +177,7 @@ class MongoDB:
             bulk_action.append(self.set_rclone(config_rclone))
             self.set_is_metadata_init(False)
 
-        if len(bulk_action) == 0:
+        if not bulk_action:
             return 0
         self.config_col.bulk_write(bulk_action)
         self.set_is_config_init(True)
@@ -219,20 +219,20 @@ class MongoDB:
 
     def set_categories(self, data: list):
         """Updates the categories config with one supplied by the user"""
-        update_data: list = []
-        for item in data:
-            update_data.append(
-                {
-                    "drive_id": item.get("drive_id"),
-                    "id": item.get("id"),
-                    "name": item.get("name"),
-                    "type": item.get("type", "movies"),
-                    "provider": item.get("provider"),
-                    "language": item.get("language", "en"),
-                    "adult": item.get("adult", False),
-                    "anime": item.get("anime", False),
-                }
-            )
+        update_data: list = [
+            {
+                "drive_id": item.get("drive_id"),
+                "id": item.get("id"),
+                "name": item.get("name"),
+                "type": item.get("type", "movies"),
+                "provider": item.get("provider"),
+                "language": item.get("language", "en"),
+                "adult": item.get("adult", False),
+                "anime": item.get("anime", False),
+            }
+            for item in data
+        ]
+
         update_action: UpdateOne = UpdateOne(
             {"categories": {"$exists": True}},
             {"$set": {"categories": update_data}},

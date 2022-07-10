@@ -78,12 +78,12 @@ async def restart_rclone():
         from scripts.install_rclone import download_rclone
 
         rclone_bin = download_rclone()
-        if not rclone_bin:
-            logger.error("Couldn't find rclone executable")
-            logger.error(
-                "Please download a suitable executable of rclone from 'rclone.org' and move it to the 'bin' folder."
-            )
-            quit(1)
+    if not rclone_bin:
+        logger.error("Couldn't find rclone executable")
+        logger.error(
+            "Please download a suitable executable of rclone from 'rclone.org' and move it to the 'bin' folder."
+        )
+        quit(1)
     try:
         rclone_process = await asyncio.create_subprocess_exec(
             *shlex.split(
@@ -150,9 +150,7 @@ async def log_rclone(rclone_process: asyncio.subprocess.Process):
 
 async def rclone_setup(categories: list):
     """Initializes the rclone.conf file"""
-    rclone_conf = ""
-    for item in mongo.config["rclone"]:
-        rclone_conf += f"\n\n{item}"
+    rclone_conf = "".join(f"\n\n{item}" for item in mongo.config["rclone"])
     with open("rclone.conf", "w+", encoding="utf-8") as w:
         w.write(rclone_conf)
 

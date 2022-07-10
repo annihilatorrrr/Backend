@@ -104,10 +104,7 @@ class Series:
         self.tagline: str = media_metadata["tagline"]
         self.description: str = media_metadata["overview"]
         runtime: str = media_metadata["episode_run_time"]
-        if len(runtime) == 0:
-            self.runtime = 0
-        else:
-            self.runtime: int = media_metadata["episode_run_time"][0]
+        self.runtime = media_metadata["episode_run_time"][0] if runtime else 0
         self.cast: List[dict] = media_metadata["credits"]["cast"][:10]
         self.crew: dict = self.get_crew(
             media_metadata["credits"]["crew"], media_metadata["created_by"]

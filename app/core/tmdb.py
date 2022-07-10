@@ -47,9 +47,8 @@ class TMDB:
         bulk_action = []
         chunks = [lines[i : i + 100000] for i in range(0, len(lines), 100000)]
         total_chunks = len(chunks)
-        x = 1
         logger.debug("Splitting %s items into chunks of 100,000 items", len(lines))
-        for chunk in chunks:
+        for x, chunk in enumerate(chunks, start=1):
             for line in chunk:
                 try:
                     bulk_action.append(InsertOne(json.loads(line)))
@@ -61,7 +60,6 @@ class TMDB:
                 mongo.movies_cache_col.bulk_write(bulk_action)
             logger.debug("Chunk %s/%s", x, total_chunks)
             chunks[x - 1] = None
-            x += 1
             bulk_action = []
         if data_type == "series":
             mongo.set_is_series_cache_init(True)
@@ -194,11 +192,11 @@ class TMDB:
         while x < n_of_appends:
             append_seasons.append("")
             for n in range((x * 20), ((x + 1) * 20)):
-                append_seasons[x] = append_seasons[x] + "season/" + str(n) + ","
+                append_seasons[x] = f"{append_seasons[x]}season/{str(n)},"
             append_seasons[x] = append_seasons[x][:-1]
             x += 1
         if type_name == "tv":
-            for n, append_season in enumerate(append_seasons):
+            for append_season in append_seasons:
                 params = {"append_to_response": append_season}
                 tmp_response = self.client.get(url, params=params).json()
                 season_keys = [k for k in tmp_response.keys() if "season/" in k]

@@ -22,11 +22,11 @@ def fetch_metadata():
                 generate_movie_metadata(tmdb, rclone[key].fetch_movies(), key)
             )
     mongo.movies_col.delete_many({})
-    if len(movies_metadata) > 0:
+    if movies_metadata:
         mongo.movies_col.bulk_write(movies_metadata)
     mongo.movies_col.create_index([("title", TEXT)], background=True, name="title")
     mongo.series_col.delete_many({})
-    if len(series_metadata) > 0:
+    if series_metadata:
         mongo.series_col.bulk_write(series_metadata)
     mongo.series_col.create_index([("title", TEXT)], background=True, name="title")
     mongo.series_col.create_index(
